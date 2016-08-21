@@ -1,0 +1,13 @@
+#!/bin/bash
+#This is run by docker on image build, it create keys for the server instance.
+cd easy-rsa
+source ./vars &> /dev/null
+export KEY_DIR="../PKI"
+./pkitool --server server
+./build-dh
+cd ..
+mkdir -p keys
+mv PKI/server.crt keys
+mv PKI/server.key keys
+mv PKI/ca.crt keys
+mv PKI/dh1024.pem keys

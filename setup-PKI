@@ -1,0 +1,22 @@
+#!/bin/bash
+#This script sets up the PKI in ./PKI/
+
+echo "This script will setup the PKI in ./PKI/"
+echo "It will overwrite anything there!"
+read -p "Are you sure you want to do that? (Y/N): " -n 1 -r
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    echo
+    exit 1
+fi
+echo
+
+mkdir -p $PWD/PKI
+export KEY_DIR=$PWD/PKI
+
+cd easy-rsa
+source ./vars > /dev/null
+./clean-all
+./pkitool --initca > /dev/null
+
+echo "PKI Initialized in ./PKI/"

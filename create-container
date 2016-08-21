@@ -1,0 +1,18 @@
+#!/bin/bash
+if [ -d PKI ]; then
+	echo "Creating new OpenWifi container"
+	CONTAINER_ID="`docker create \
+		-t -p 443:443 \
+		--cap-add=NET_ADMIN \
+		--device /dev/net/tun \
+		timvrakas/openwifi`"
+	echo "Configuring new Container"
+	docker cp PKI $CONTAINER_ID:/opt/openwifi/PKI
+	docker start -a $CONTAINER_ID
+	echo -n "Created new container with name: "
+	CONTAINER_NAME="`docker inspect --format="{{.Name}}" $CONTAINER_ID | tail -c+2`"
+	echo $CONTAINER_NAME
+	echo "Run it with: docker start [-a] $CONTAINER_NAME" 
+else
+echo "No PKI Present, Please run ./setup-PKI first!"
+fi
