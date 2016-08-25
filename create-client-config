@@ -1,0 +1,24 @@
+#!/bin/bash
+export KEY_DIR=$PWD/PKI
+cd easy-rsa
+source ./vars > /dev/null
+echo "Creating keys for client: $1"
+./pkitool $1 &> /dev/null
+cd ..
+mkdir -p clients
+echo "Trimming .crt"
+openssl x509 -in PKI/$1.crt -out PKI/$1.crt.x509 &> /dev/null
+echo "Building .ovpn"
+cat base-config.ovpn > "clients/$1.ovpn"
+echo "<ca>" >> "clients/$1.ovpn"
+cat PKI/ca.crt >> "clients/$1.ovpn"
+echo "</ca>" >> "clients/$1.ovpn"
+echo >> "clients/$1.ovpn"
+echo "<key>" >> "clients/$1.ovpn"
+cat PKI/$1.key >> "clients/$1.ovpn"
+echo "</key>" >> "clients/$1.ovpn"
+echo >> "clients/$1.ovpn"
+echo "<cert>" >> "clients/$1.ovpn"
+cat PKI/$1.crt.x509 >> "clients/$1.ovpn"
+echo "</cert>" >> "clients/$1.ovpn"
+echo "Built $1.ovpn config file"
