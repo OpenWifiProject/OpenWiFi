@@ -1,0 +1,58 @@
+#!/bin/bash
+if [ ! -d keys ]; then
+	echo "Keys do not exist"
+	if [ -d PKI ]; then
+		
+		cd easy-rsa
+		export KEY_DIR=$PWD/../PKI
+		source ./vars > /dev/null
+		
+		echo "Genertating Server Keys"
+		./build-dh
+		./pkitool --server server 2> /dev/null
+		
+		echo "Generating Client Keys"
+		./pkitool OpenWiFi &> /dev/null
+		openssl x509 -in OpenWiFi.crt -out OpenWiFi.crt.x509 &> /dev/null
+		
+		cd ..
+		
+		echo "Setting Up Server Keys"
+		mkdir -p keys
+		mv PKI/dh1024.pem keys/
+		mv PKI/server.crt keys/
+		mv PKI/server.key keys/
+		cp PKI/ca.crt keys/
+		
+		echo "Building OpenWifi.ovpn"
+		cat base-config.ovpn > OpenWiFi.ovpn
+		echo "<ca>" >> OpenWiFi.ovpn
+		cat PKI/ca.crt >> OpenWiFi.ovpn
+		echo "</ca>" >> OpenWiFi.ovpn
+		echo >> OpenWiFi.ovpn
+		echo "<key>" >> OpenWiFi.ovpn
+		cat PKI/OpenWiFi.key >> OpenWiFi.ovpn
+		echo "</key>" >> OpenWiFi.ovpn
+		echo >> OpenWiFi.ovpn
+		echo "<cert>" >> OpenWiFi.ovpn
+		cat PKI/OpenWiFi.crt.x509 >> OpenWiFi.ovpn
+		echo "</cert>" >> OpenWiFi.ovpn
+		mv OpenWiFi.ovpn /usr/share/nginx/html/
+
+		echo "Cleaning PKI"
+		rm -rf easy-rsa
+		rm -rf PKI
+		
+	else
+		echo "Please Provide PKI/"
+	fi
+else
+	if [ -d PKI ]; then
+		echo "Cleaning PKI for Security"
+		rm -rf PKI
+	fi
+	echo "~~~~~Starting VPN Server~~~~"
+	echo "Detach Container with CTRL-C"
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	exec openvpn server.conf
+fi

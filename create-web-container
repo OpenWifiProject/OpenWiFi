@@ -1,0 +1,22 @@
+#!/bin/bash
+if [ -d PKI ]; then
+	echo "Creating new nginx container"
+	CONTAINER_ID="`docker create \
+		-p 80:80 \
+		web-docker`"
+	echo "Configuring new Container"
+	docker cp PKI $CONTAINER_ID:/opt/openWiFi/PKI
+	echo -n "Please enter the address of this server: "
+	read ADDRESS
+	echo "$ADDRESS" > hostname
+	docker cp hostname $CONTAINER_ID:/opt/openWiFi
+	rm hostname
+	echo "Configuring Site with hostname: $ADDRESS"
+	docker start -a $CONTAINER_ID
+	echo -n "Created new container with name: "
+	CONTAINER_NAME="`docker inspect --format="{{.Name}}" $CONTAINER_ID | tail -c+2`"
+	echo $CONTAINER_NAME
+	echo "Run it with: docker start [-a] $CONTAINER_NAME" 
+else
+	echo "No PKI Present, Please run ./setup-PKI first!"
+fi

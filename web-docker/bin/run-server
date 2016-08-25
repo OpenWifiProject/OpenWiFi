@@ -1,0 +1,51 @@
+#!/bin/bash
+if [ ! -f /usr/share/nginx/html/OpenWiFi.ovpn ]; then
+	echo "Config does not exist"
+	if [ -d PKI ]; then
+		echo "Configuring Container"
+		ADDRESS="`cat hostname`"
+		cd easy-rsa
+		export KEY_DIR=$PWD/../PKI
+		source ./vars > /dev/null
+		
+		echo "Generating Client Keys"
+		./pkitool OpenWiFi &> /dev/null
+		
+		cd ..
+		
+		openssl x509 -in PKI/OpenWiFi.crt -out PKI/OpenWiFi.crt.x509
+		
+		echo "Building OpenWifi.ovpn"
+		cat base-config.ovpn > OpenWiFi.ovpn
+		sed -i "s#ADDRESS#$ADDRESS#g" OpenWiFi.ovpn
+		echo "<ca>" >> OpenWiFi.ovpn
+		cat PKI/ca.crt >> OpenWiFi.ovpn
+		echo "</ca>" >> OpenWiFi.ovpn
+		echo >> OpenWiFi.ovpn
+		echo "<key>" >> OpenWiFi.ovpn
+		cat PKI/OpenWiFi.key >> OpenWiFi.ovpn
+		echo "</key>" >> OpenWiFi.ovpn
+		echo >> OpenWiFi.ovpn
+		echo "<cert>" >> OpenWiFi.ovpn
+		cat PKI/OpenWiFi.crt.x509 >> OpenWiFi.ovpn
+		echo "</cert>" >> OpenWiFi.ovpn
+		mv OpenWiFi.ovpn /usr/share/nginx/html/
+
+		echo "Cleaning PKI"
+		rm -rf easy-rsa
+		rm -rf PKI
+		
+	else
+		echo "Please Provide PKI/"
+	fi
+else
+	if [ -d PKI ]; then
+		echo "Cleaning PKI for Security"
+		rm -rf PKI
+	fi
+	echo "~Starting nginx Web Server~~"
+	echo "Detach Container with CTRL-C"
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	cd /etc/nginx
+	exec nginx -g "daemon off;"
+fi
